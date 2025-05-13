@@ -1,11 +1,11 @@
 
-# SocialSphere
+# Dreamscape
 
 **A scalable social media platform built with a microservices architecture.**
 
 ## 🧩 Overview
 
-SocialSphere is a modern web application that allows users to:
+Dreamscape is a modern web application that allows users to:
 - 📸 Post updates and media
 - ❤️ Like and 💬 comment on posts
 - 💬 Chat in real-time with friends and groups
@@ -58,8 +58,8 @@ It’s built with **NestJS** for the backend services and **Nuxt** for the front
 
 ```bash
 # Clone the monorepo
-git clone https://github.com/your-username/socialsphere.git
-cd socialsphere
+git clone https://github.com/iamArvy/dreamscape.git
+cd dreamscape
 
 # Install dependencies
 pnpm install
@@ -88,7 +88,7 @@ pnpm test
 ## 📦 Folder Structure
 
 ```
-socialsphere/
+dreamscape/
 ├── frontend/              # Nuxt frontend
 ├── services/              # NestJS microservices
 │   ├── auth/
