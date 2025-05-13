@@ -1,0 +1,103 @@
+services:
+  gateway:
+    build:
+      context: ./gateway
+      args:
+        SERVICE: "api-gateway"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - auth-service
+      - dashboard-service
+      # - api-service
+    environment:
+      AUTH_SERVICE_URL: "http://auth-service:3000"
+      USER_SERVICE_URL: "http://user-service:3000"
+      CHAT_SERVICE_URL: "http://chat-service:3000"
+      POST_SERVICE_URL: "http://post-service:3000"
+      JWT_SECRET: "my-secret"
+
+      # API_SERVICE_URL: 'http://devfolio-api-service:3000'
+    networks:
+      - dreamscape-network
+    container_name: dreamscape-api-gateway
+
+  auth-service:
+    build:
+      context: ./services/auth
+    depends_on:
+      - db
+    environment:
+      JWT_SECRET: "my-secret"
+      REFRESH_SECRET: "my-refresh-secret"
+      DATABASE_URL: "mongodb://root:example@localhost:27017/auth?authSource=admin"
+    networks:
+      - dreamscape-network
+    container_name: dreamscape-auth-service
+
+  user-service:
+    build:
+      context: ./services/user
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: "mongodb://root:example@localhost:27017/auth?authSource=admin"
+    networks:
+      - dreamscape-network
+    container_name: dreamscape-user-service
+
+  chat-service:
+    build:
+      context: ./services/chat
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: "mongodb://root:example@localhost:27017/chat?authSource=admin"
+    networks:
+      - dreamscape-network
+    container_name: dreamscape-chat-service
+
+  post-service:
+    build:
+      context: ./services/post
+    depends_on:
+      - db
+    environment:
+      JWT_SECRET: "my-secret"
+      REFRESH_SECRET: "my-refresh-secret"
+      DATABASE_URL: "mongodb://root:example@localhost:27017/post?authSource=admin"
+    networks:
+      - dreamscape-network
+    container_name: dreamscape-post-service
+
+  dreamscape:
+    build:
+      context: ./services/frontend
+    depends_on:
+      - db
+    # environment:
+    #   DATABASE_URL: "postgres://user:password@db:5432/devfoliodb"
+    networks:
+      - dreamscape-network
+    container_name: dreamscape-service
+
+  db:
+    image: mongo:latest
+    container_name: dreamscape-db
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    ports:
+      - "27017:27017"
+    volumes:
+      - db-data:/data/db
+    networks:
+      - dreamscape-network
+
+volumes:
+  db-data:
+
+networks:
+  dreamscape-network:
+    driver: bridge
