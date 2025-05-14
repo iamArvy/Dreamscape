@@ -13,7 +13,7 @@ import { UserController } from './user/user.controller';
     MongooseModule.forRoot(
       process.env.DB_URL ||
         'mongodb://root:example@localhost:27017/auth?authSource=admin',
-    ), // adjust connection string
+    ),
     PassportModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'dev-secret',

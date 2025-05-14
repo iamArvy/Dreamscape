@@ -1,16 +1,15 @@
+import { ParticipantService } from './participant/participant.service';
+import { ConversationService } from './conversation/conversation.service';
 import { User } from './../types/index';
 import {
   Injectable,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Conversation, Message, Participant } from 'generated/prisma';
-import {
-  ConversationService,
-  MessageService,
-  ParticipantService,
-} from './services';
-
+import { MessageService } from './message/message.service';
+import { Conversation } from './conversation/conversation.schema';
+import { Message } from './message/message.schema';
+import { Participant } from './participant/participant.schema';
 @Injectable()
 export class AppService {
   constructor(
@@ -27,7 +26,7 @@ export class AppService {
         user_id: user.id,
         name: user.name,
         avatar: user.avatar,
-        conversationId: conversation.id,
+        conversation_id: conversation._id as string,
       });
     }
 
@@ -43,7 +42,7 @@ export class AppService {
       user_id: creator.id,
       name: creator.name,
       avatar: creator.avatar,
-      conversationId: conversation.id,
+      conversation_id: conversation._id as string,
       isAdmin: true,
     });
 
@@ -54,7 +53,7 @@ export class AppService {
         user_id: user.id,
         name: user.name,
         avatar: user.avatar,
-        conversationId: conversation.id,
+        conversation_id: conversation._id as string,
       });
     }
 
@@ -71,7 +70,7 @@ export class AppService {
       user_id: mid.id,
       avatar: mid.avatar,
       name: mid.name,
-      conversationId: cid,
+      conversation_id: cid,
     });
   }
 
@@ -85,8 +84,8 @@ export class AppService {
     return await this.message.create({
       sender_id: uid,
       text: text,
-      reply_to_id: rid ?? undefined,
-      conversationId: cid,
+      reply_id: rid ?? undefined,
+      conversation_id: cid,
     });
   }
 
@@ -95,49 +94,31 @@ export class AppService {
     mid: string,
     uid: string,
     text: string,
-  ): Promise<Message> {
+  ): Promise<Message | null> {
     await this.participant.getParticipantWithUserAndConversation(uid, cid);
     await this.message.isSender(mid, uid);
-    return await this.message.update({
-      where: {
-        id: mid,
-      },
-      data: {
-        text: text,
-      },
-    });
+    return await this.message.update(mid, { text }).lean();
   }
 
-  async deleteMessage(uid: string, mid: string, cid: string): Promise<Message> {
+  async deleteMessage(uid: string, mid: string, cid: string): Promise<boolean> {
     const isAdmin = await this.participant.isAdmin(uid, cid);
     const isSender = await this.message.isSender(mid, uid);
 
     if (!isAdmin || !isSender) throw new UnauthorizedException();
-
-    return this.message.delete({
-      id: mid,
-    });
+    await this.message.deleteMessage(mid);
+    return true;
   }
 
   async getUserConversations(uid: string) {
-    const participants = await this.participant.participants({
-      where: { user_id: uid },
-      select: {
-        conversationId: true,
-      },
-    });
+    const participants = await this.participant.participants({ user_id: uid });
 
     const conversationIds: string[] = participants.map(
-      (p: Participant) => p.conversationId,
+      (p: Participant) => p.conversation_id,
     );
 
     if (!conversationIds.length) return [];
 
-    return await this.conversation.conversations({
-      where: {
-        id: { in: conversationIds },
-      },
-    });
+    return await this.conversation.findMany(conversationIds);
   }
 
   async getConversation(uid: string, cid: string) {
@@ -146,9 +127,7 @@ export class AppService {
     if (!inConversation)
       throw new UnauthorizedException('User not in conversation');
 
-    return await this.conversation.conversation({
-      where: { id: cid },
-    });
+    return await this.conversation.findOne(cid);
   }
 
   async getConversationMessages(
@@ -158,11 +137,7 @@ export class AppService {
     const inConversation =
       await this.participant.getParticipantWithUserAndConversation(uid, cid);
     if (!inConversation) throw new UnauthorizedException();
-    return this.message.messages({
-      where: {
-        conversationId: cid,
-      },
-    });
+    return this.message.conversationMessages(cid);
   }
 
   async getConversationParticipants(
@@ -194,24 +169,25 @@ export class AppService {
     const isOwner = await this.conversation.isOwner(cid, uid);
     if (isOwner)
       throw new UnauthorizedException('Cannot Delete Owner from group');
-    return await this.participant.delete({ id: participant.id });
+    await participant?.deleteOne();
+    return participant;
   }
 
   async leaveGroup(uid: string, cid: string): Promise<Participant> {
     const participant =
       await this.participant.getParticipantWithUserAndConversation(uid, cid);
     if (!participant) throw new NotFoundException();
-    return await this.participant.delete({ id: participant.id });
+    await participant.deleteOne();
+    return participant;
   }
 
-  async deleteGroup(uid: string, cid: string): Promise<Conversation> {
+  async deleteGroup(uid: string, cid: string): Promise<Conversation | null> {
+    const conversation = await this.conversation.findOne(cid);
     const isOwner = await this.conversation.isOwner(cid, uid);
     if (!isOwner)
       throw new UnauthorizedException('Only Owners can delete groups');
-
-    return await this.conversation.delete({
-      id: cid,
-    });
+    await conversation?.deleteOne();
+    return conversation;
   }
 
   async makeAdmin(uid: string, cid: string, pid: string) {
@@ -224,12 +200,7 @@ export class AppService {
 
     if (!participant) throw new NotFoundException('User not found in group');
     if (participant.isAdmin) return participant;
-    return await this.participant.update({
-      where: { id: participant.id },
-      data: {
-        isAdmin: true,
-      },
-    });
+    return await this.participant.update(pid, { isAdmin: true });
   }
 
   async removeAdmin(uid: string, cid: string, pid: string) {
@@ -245,12 +216,7 @@ export class AppService {
     if (!isOwner)
       throw new UnauthorizedException('Owners can not be removed from admin');
     if (!participant.isAdmin) return participant;
-    return await this.participant.update({
-      where: { id: participant.id },
-      data: {
-        isAdmin: undefined,
-      },
-    });
+    return await this.participant.update(pid, { isAdmin: false });
   }
 
   async changeOwnership(uid: string, cid: string, pid: string) {
@@ -263,13 +229,8 @@ export class AppService {
 
     if (!participant) throw new NotFoundException('User not found in group');
 
-    return await this.conversation.update({
-      where: {
-        id: cid,
-      },
-      data: {
-        creator: participant.user_id,
-      },
+    return await this.conversation.update(cid, {
+      creator: participant.user_id,
     });
   }
 }
