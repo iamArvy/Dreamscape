@@ -3,16 +3,16 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { LoginInput, RegisterInput, UpdatePasswordInput } from './app.inputs';
+import { LoginInput, RegisterInput, UpdatePasswordInput } from '../app.inputs';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { UserService } from './services/user.service';
+import { UserService } from './user.service';
 import * as argon from 'argon2';
-import { AuthResponse } from './app.response';
+import { AuthResponse } from '../app.response';
 import { User } from '@prisma/client';
 
 @Injectable()
-export class AppService {
+export class AuthService {
   constructor(
     private user: UserService,
     private jwtService: JwtService,
@@ -23,6 +23,19 @@ export class AppService {
     const valid = await argon.verify(hash, secret);
     if (!valid) throw new UnauthorizedException('Invalid credentials');
     return true;
+  }
+
+  async validateUser(email: string, pass: string): Promise<any> {
+    const user = await this.user.user({
+      where: {
+        email,
+      },
+    });
+
+    if (!user) throw new UnauthorizedException('User not found');
+    const { password, ...result } = user;
+    await this.compareSecrets(password, pass);
+    return result;
   }
 
   private async generateToken(

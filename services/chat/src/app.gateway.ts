@@ -65,10 +65,10 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const { cid, text, rid } = payload;
     const user: string = client.data as string;
 
-    const message = await this.service.sendMessage(cid, user, text, rid);
+    // const message = await this.service.sendMessage(cid, user, text, rid);
 
     this.logger.log(`Message sent to ${payload.cid} by ${user}`);
-    this.server.to(payload.cid).emit('newMessage', message);
+    this.server.to(payload.cid).emit('newMessage', text);
   }
 
   // Send a message
