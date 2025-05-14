@@ -1,10 +1,11 @@
 import { Resolver, Query, Mutation, Args, Context } from '@nestjs/graphql';
-import { Participant, Conversation } from './entities';
 // import { UseGuards } from '@nestjs/common';
 // import { PermissionsGuard } from './guards';
 // import { Permission } from './decorators';
 import { AppService } from './app.service';
 import { User } from 'types';
+import { Conversation } from './conversation/conversation.entity';
+import { Participant } from './participant/participant.entity';
 @Resolver()
 export class ParticipantResolver {
   constructor(private readonly service: AppService) {}
