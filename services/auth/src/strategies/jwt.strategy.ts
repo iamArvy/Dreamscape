@@ -18,6 +18,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     // const user = await this.user.user({
     //   where: { id: sub },
     // });
-    return { user_Id: sub, email };
+    return { id: sub, email };
   }
 }

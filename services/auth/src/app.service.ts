@@ -1,3 +1,4 @@
+import { User } from './user/user.schema';
 import {
   Injectable,
   NotFoundException,
@@ -6,10 +7,9 @@ import {
 import { LoginInput, RegisterInput, UpdatePasswordInput } from './app.inputs';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { UserService } from './services/user.service';
+import { UserService } from './user/user.service';
 import * as argon from 'argon2';
 import { AuthResponse } from './app.response';
-import { User } from '@prisma/client';
 
 @Injectable()
 export class AppService {
@@ -34,6 +34,7 @@ export class AppService {
     const secret: string =
       this.config.get(type === 'refresh' ? 'REFRESH_SECRET' : 'JWT_SECRET') ||
       '';
+    console.log('secret', secret);
     const token = await this.jwtService.signAsync(payload, {
       expiresIn: type === 'refresh' ? '7d' : '15m',
       secret: secret,
@@ -46,68 +47,48 @@ export class AppService {
     const refresh_token = await this.generateToken(id, email, 'refresh');
 
     const hashedRefreshToken = await argon.hash(refresh_token);
-    await this.user.update({
-      where: { id },
-      data: { refresh_token: hashedRefreshToken },
-    });
+    await this.user.updateRefreshToken(id, hashedRefreshToken);
     return {
       access: { token: access_token, expiresIn: 15000 },
       refresh: { token: refresh_token, expiresIn: 24000 },
     };
   }
 
-  async signup(Input: RegisterInput): Promise<AuthResponse> {
-    if (!Input) throw new UnauthorizedException('Invalid credentials');
-    const exists = await this.user.user({
-      where: { email: Input.email },
-    });
+  async signup(data: RegisterInput): Promise<AuthResponse> {
+    if (!data) throw new UnauthorizedException('Invalid credentials');
+    const exists = await this.user.findByEmail(data.email);
     if (exists) throw new UnauthorizedException('User already exists');
-    const hash = await argon.hash(Input.password);
-    const user = await this.user.create({
-      email: Input.email,
-      password: hash,
-    });
-    return this.authenticateUser(user.id, user.email);
+    const hash = await argon.hash(data.password);
+    const user = await this.user.create(data.email, hash);
+    return this.authenticateUser(user.id as string, user.email);
   }
 
-  async login(data: LoginInput): Promise<AuthResponse> {
-    const user = await this.user.user({
-      where: { email: data.email },
-    });
-    if (!user) throw new NotFoundException('User not found');
+  async login(data: LoginInput) {
+    const user = await this.user.findByEmailWithPassword(data.email);
+    console.log(user);
+    if (!user) throw new UnauthorizedException('User not found');
     await this.compareSecrets(user.password, data.password);
-    return this.authenticateUser(user.id, user.email);
+    return this.authenticateUser(user.id as string, user.email);
   }
 
   async refreshToken(refresh_token: string): Promise<AuthResponse> {
-    const decoded: { sub: string; email: string } = this.jwtService.verify(
-      refresh_token,
-      {
-        secret: this.config.get('REFRESH_SECRET') || '',
-      },
-    );
-    const user = await this.user.user({
-      where: { id: decoded.sub },
-      // select: { ...this.userService.public, refreshToken: true },
+    const { sub }: { sub: string } = this.jwtService.verify(refresh_token, {
+      secret: this.config.get('REFRESH_SECRET') || '',
     });
 
+    const user = await this.user.find(sub);
     if (!user || !user.refresh_token)
       throw new UnauthorizedException('Invalid refresh token');
     await this.compareSecrets(user.refresh_token, refresh_token);
-    return this.authenticateUser(user.id, user.email);
+    return this.authenticateUser(user.id as string, user.email);
   }
 
   async logout(id: string) {
-    await this.user.update({
-      where: { id: id },
-      data: { refresh_token: null },
-    });
+    await this.user.updateRefreshToken(id, null);
   }
 
   async updatePassword(id: string, data: UpdatePasswordInput): Promise<User> {
-    const user = await this.user.user({
-      where: { id: id },
-    });
+    const user = await this.user.find(id);
     if (!user) throw new NotFoundException('User not found');
 
     const valid = await this.compareSecrets(user.password, data.oldPassword);
@@ -115,11 +96,7 @@ export class AppService {
 
     const hash = await argon.hash(data.newPassword);
 
-    return this.user.update({
-      where: { id: id },
-      data: {
-        password: hash,
-      },
-    });
+    user.password = hash;
+    return await user.save();
   }
 }

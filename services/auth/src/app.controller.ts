@@ -1,7 +1,15 @@
-import { Body, Controller, Get, Post, Request } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
 import { AppService } from './app.service';
 import { LoginInput, RegisterInput } from './app.inputs';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import { JwtAuthGuard } from './guards';
 
 @Controller()
 export class AppController {
@@ -27,6 +35,7 @@ export class AppController {
   }
 
   @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @Post('logout')
   logout(@Request() req: { user: string }) {
     return this.service.logout(req.user);
