@@ -1,0 +1,72 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgres"
+  url      = env("POSTGRES_DB_URL")
+}
+
+model User {
+  id               String         @id @default(cuid())
+  user_id          String         @unique()
+  username         String
+  avatar           String?
+  created_at       DateTime       @default(now())
+  updated_at       DateTime       @updatedAt
+  conversations    Conversation[]
+  participants     Participant[]
+  // Friendships where this user is user1
+  friendsInitiated Friend[]       @relation("User1Friends")
+
+  // Friendships where this user is user2
+  friendsReceived Friend[] @relation("User2Friends")
+}
+
+model Conversation {
+  id          String        @id @default(cuid())
+  name        String?
+  group       Boolean?
+  creator_id  String?
+  creator     User?         @relation(fields: [creator_id], references: [user_id])
+  created_at  DateTime      @default(now())
+  updated_at  DateTime      @updatedAt
+  participant Participant[]
+
+  @@map("conversations")
+}
+
+model Participant {
+  id              String       @id @default(cuid())
+  user_id         String
+  user            User         @relation(fields: [user_id], references: [user_id])
+  is_admin        Boolean      @default(false)
+  conversation_id String
+  conversation    Conversation @relation(fields: [conversation_id], references: [id])
+  created_at      DateTime     @default(now())
+  updated_at      DateTime?    @updatedAt
+
+  @@unique([user_id, conversation_id])
+  @@map("participants")
+}
+
+model Friend {
+  id        String   @id @default(cuid())
+  user1_id  String
+  user2_id  String
+  user1     User     @relation("User1Friends", fields: [user1_id], references: [user_id])
+  user2     User     @relation("User2Friends", fields: [user2_id], references: [user_id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([user1_id, user2_id])
+  @@unique([user2_id, user1_id])
+  @@map("user_friends")
+}

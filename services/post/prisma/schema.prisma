@@ -6,10 +6,50 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
+  output   = "../node_modules/.prisma/client"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = env("POSTGRES_DB_URL")
+}
+
+model User {
+  id      String  @id @default(cuid())
+  user_id String  @unique()
+  name    String
+  avatar  String?
+  likes   Like[]
+  views   View[]
+}
+
+model Comment {
+  id          String   @id @default(cuid())
+  parent_post String
+  child_post  String
+  created_at  DateTime @default(now())
+
+  @@unique([parent_post, child_post])
+  @@map("post_comments")
+}
+
+model Like {
+  id         String   @id @default(cuid())
+  post_id    String
+  user_id    String
+  user       User     @relation(fields: [user_id], references: [user_id])
+  created_at DateTime @default(now())
+
+  @@unique([post_id, user_id])
+  @@map("post_likes")
+}
+
+model View {
+  id         String   @id @default(cuid())
+  post_id    String
+  user_id    String
+  user       User     @relation(fields: [user_id], references: [id])
+  created_at DateTime @default(now())
+
+  @@unique([post_id, user_id])
 }

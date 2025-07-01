@@ -1,0 +1,99 @@
+syntax = "proto3";
+
+package auth;
+
+import "google/protobuf/empty.proto";
+
+service AuthService {
+  rpc Health(google.protobuf.Empty) returns (Status);
+
+  // Credential-related
+  rpc Register(RegisterRequest) returns (AuthResponse);
+  rpc ChangePassword(ChangePasswordRequest) returns (Status);
+  rpc ChangeEmail(ChangeEmailRequest) returns (Status);
+  rpc requestPasswordResetToken(RequestPasswordResetMessage) returns (Status);
+  rpc resetPassword(ResetPasswordMessage) returns (Status);
+
+  // Email verification
+  rpc RequestEmailVerification(EmailData) returns (Status);
+  rpc VerifyEmail(TokenRequest) returns (Status);
+
+  // Login / Token
+  rpc Login(LoginRequest) returns (AuthResponse);
+  rpc RefreshToken(TokenRequest) returns (AuthToken);
+  rpc Logout(TokenRequest) returns (Status);
+}
+
+message Status {
+  bool success = 1;
+}
+
+message RegisterData {
+  string userId = 1;
+  string email = 2;
+  string password = 3;
+}
+
+message RegisterRequest {
+  RegisterData data = 1;
+  string userAgent = 2;
+  string ipAddress = 3;
+}
+
+message AuthResponse {
+  AuthToken access = 1;
+  AuthToken refresh = 2;
+}
+
+message AuthToken {
+  string token = 1;
+  int32 expiresIn = 2;
+}
+
+message ChangePasswordData {
+  string oldPassword = 1;
+  string newPassword = 2;
+}
+
+message ChangePasswordRequest {
+  string id = 1;
+  ChangePasswordData data = 2;
+}
+
+message RequestPasswordResetMessage {
+  string id = 1;
+  string email = 2;
+}
+
+message ResetPasswordMessage {
+  string token = 1;
+  string password = 2;
+}
+
+message EmailData {
+  string email = 1;
+}
+
+message ChangeEmailRequest {
+  string id = 1;
+  EmailData data = 2;
+}
+
+message TokenRequest {
+  string token = 1;
+}
+
+message IsEmailVerifiedResponse {
+  bool verified = 1;
+}
+
+message LoginData {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginRequest {
+  LoginData data = 1;
+  string userAgent = 2;
+  string ipAddress = 3;
+}

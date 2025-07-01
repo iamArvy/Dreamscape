@@ -1,9 +1,18 @@
-FROM node:23-alpine
+FROM node:24-slim
 
 WORKDIR /usr/src/app
 
-COPY package.json ./
-RUN npm install --only=production --omit=dev
+# Install corepack to manage pnpm easily
+RUN npm install -g corepack
+
+# Enable pnpm (corepack comes with Node 16+)
+RUN corepack enable
+RUN corepack prepare pnpm@latest --activate
+
+RUN apt-get update -y && apt-get install -y openssl libssl-dev
+
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --prod
 
 
 COPY prisma ./prisma

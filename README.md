@@ -1,47 +1,59 @@
+# 💬 Social Media API
 
-# Dreamscape
-
-**A scalable social media platform built with a microservices architecture.**
-
-## 🧩 Overview
-
-Dreamscape is a modern web application that allows users to:
-- 📸 Post updates and media
-- ❤️ Like and 💬 comment on posts
-- 💬 Chat in real-time with friends and groups
-- 👥 Connect with other users
-
-It’s built with **NestJS** for the backend services and **Nuxt** for the frontend, following a clean and modular microservices approach for better scalability, maintainability, and developer experience.
+A scalable, modular **Social Media Backend** built with **NestJS**, supporting both **real-time communication** and traditional REST/GraphQL interactions. Built with microservices, gRPC, and WebSockets, it provides real-time chat, friend/follow systems, and a foundation for modern social features.
 
 ---
 
-## 🛠️ Tech Stack
+## 📌 Table of Contents
 
-| Layer        | Technology     |
-|--------------|----------------|
-| Frontend     | Nuxt 3         |
-| Backend      | NestJS         |
-| Communication| gRPC, WebSockets, REST |
-| Auth         | JWT, Passport  |
-| Realtime     | Socket.io / Redis pub-sub |
-| Database     | PostgreSQL / MongoDB (per service) |
-| Messaging    | AWS SQS / Kafka (event-driven) |
-| Infrastructure | Docker, AWS ECS/Fargate or EC2, S3, CloudFormation |
+* [Features](#features)
+* [Tech Stack](#tech-stack)
+* [Architecture](#architecture)
+* [Getting Started](#getting-started)
+* [Microservices Overview](#microservices-overview)
+* [Gateway API](#gateway-api)
+* [Authentication](#authentication)
+* [Real-time Communication](#real-time-communication)
+* [API Documentation](#api-documentation)
+* [Usage Examples](#usage-examples)
+* [Planned Features](#planned-features)
+* [Project Structure](#project-structure)
+* [Contributing](#contributing)
+* [License](#license)
 
 ---
 
-## 🧱 Microservices
+## ✨ Features
 
-| Service           | Description                                             |
-|-------------------|---------------------------------------------------------|
-| **Auth Service**   | Handles user registration, login, and JWT issuance     |
-| **User Service**   | Manages user profiles, connections, and preferences    |
-| **Post Service**   | CRUD operations for user-generated posts               |
-| **Interaction Service** | Handles likes, comments, and reactions           |
-| **Chat Service**   | Real-time messaging with support for 1-1 and group chats |
-| **Notification Service** | Sends alerts for new messages, likes, and more  |
-| **Media Service**  | Handles file uploads (images, videos) to S3            |
-| **Gateway API**    | Acts as an entry point, routes requests to services    |
+* 🧱 Microservices architecture with gRPC
+* 🌐 REST + GraphQL API support
+* 🔐 Auth system with JWT and RBAC
+* 🧑‍🤝‍🧑 Follow/friend request system
+* 💬 1-on-1 and group chat support with Socket.IO
+* 📥 Group join requests with admin approval
+* 📌 Real-time messaging using WebSockets
+* 🔔 Notification support (via Redis pub/sub)
+
+---
+
+## 🛠 Tech Stack
+
+| Layer             | Tech Used                               |
+| ----------------- | --------------------------------------- |
+| Backend Framework | NestJS                                  |
+| API Protocols     | REST, GraphQL, gRPC                     |
+| Real-time Engine  | WebSockets, Socket.IO                   |
+| Messaging Queue   | Redis Pub/Sub                           |
+| Database          | PostgreSQL                              |
+| Auth              | JWT, RBAC                               |
+| Containerization  | Docker, Docker Compose                  |
+| DevOps            | GitHub Actions (CI/CD), Terraform (WIP) |
+
+---
+
+## 🏗 Architecture
+
+\[Insert system architecture diagram here: gateway, services, Redis, WebSockets, etc.]
 
 ---
 
@@ -49,76 +61,168 @@ It’s built with **NestJS** for the backend services and **Nuxt** for the front
 
 ### Prerequisites
 
-- Node.js (v18+)
-- Docker & Docker Compose
-- pnpm (or npm/yarn)
-- AWS CLI (for cloud deployment)
+* Node.js (v18+)
+* Docker & Docker Compose
+* PostgreSQL
+* Redis
 
-### Local Setup
+### Clone the Repo
 
 ```bash
-# Clone the monorepo
-git clone https://github.com/iamArvy/dreamscape.git
-cd dreamscape
+git clone https://github.com/iamarvy/social-media-api.git
+cd social-media-api
+```
 
-# Install dependencies
-pnpm install
+### Install Dependencies
 
-# Start all services
+```bash
+npm install
+```
+
+### Run with Docker
+
+```bash
 docker-compose up --build
 ```
 
-Frontend (Nuxt) will be available at `http://localhost:3000`  
-Backend services will run on different ports inside Docker.
-
----
-
-## 🧪 Running Tests
-
-Each service contains its own tests.
+### Run Individual Services
 
 ```bash
-# Example for auth service
 cd services/auth
-pnpm test
+npm run start:dev
 ```
 
 ---
 
-## 📦 Folder Structure
+## 🧩 Microservices Overview
 
+| Service              | Description                              |
+| -------------------- | ---------------------------------------- |
+| Auth Service         | Handles sign up, login, token generation |
+| User Service         | Stores user profile and connection data  |
+| Post Service         | Manages posts, comments, and likes       |
+| Chat Service         | Handles real-time and group messaging    |
+| Notification Service | Sends real-time or async notifications   |
+
+---
+
+## 🌐 Gateway API
+
+* Unified **REST and GraphQL** entry point for frontend clients
+* Integrates with all microservices over gRPC
+* Handles WebSocket connections for real-time communication
+* Includes role and token validation middleware
+
+---
+
+## 🔐 Authentication
+
+* Uses **JWT-based** auth across services
+* Role-based permissions: User, Admin, Group Admin
+* Token validation handled at gateway + gRPC level guards
+
+---
+
+## 🔄 Real-time Communication
+
+* WebSocket gateway powered by **Socket.IO**
+* Chat service emits and listens to events using Redis pub/sub
+* Group messaging with join requests and admin approval
+* Message persistence using PostgreSQL
+
+---
+
+## 📚 API Documentation
+
+This project uses **Swagger** for automatic API documentation.
+
+* 🧭 **Full REST Docs**: Available at `http://localhost:3000/api`
+* ⚙️ **Generated via**: NestJS + Swagger module
+
+### Sample Endpoints
+
+| Method | Endpoint       | Description              |
+| ------ | -------------- | ------------------------ |
+| POST   | `/auth/signup` | Register a new user      |
+| POST   | `/auth/login`  | Authenticate and get JWT |
+| GET    | `/users/me`    | Fetch current user info  |
+| POST   | `/posts`       | Create a new post        |
+
+📌 For the complete list of endpoints, request/response schemas, and error formats, see the Swagger UI at `/api/docs`.
+
+---
+
+## 🧪 Usage Examples
+
+### Authentication
+
+```bash
+curl -X POST http://localhost:3000/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{ "email": "user@example.com", "password": "123456" }'
 ```
-dreamscape/
-├── frontend/              # Nuxt frontend
-├── services/              # NestJS microservices
-│   ├── auth/
-│   ├── user/
-│   ├── post/
-│   ├── chat/
-│   └── ...
-├── gateway/               # API Gateway using NestJS
-├── docker-compose.yml
-└── README.md
+
+### Create Post
+
+```bash
+curl -X POST http://localhost:3000/posts \
+  -H 'Authorization: Bearer <token>' \
+  -H 'Content-Type: application/json' \
+  -d '{ "text": "My first post!" }'
+```
+
+### Send WebSocket Message (via Socket.IO client)
+
+```js
+socket.emit('send_message', {
+  roomId: 'abc123',
+  message: 'Hello, world!',
+});
 ```
 
 ---
 
-## 📈 Future Plans
+## 🛠 Planned Features
 
-- Implement Redis caching
-- Add search service (e.g., ElasticSearch)
-- Add subscriptions & notifications (Web Push)
-- Integrate admin dashboard
-- Support media tagging and mentions
-
----
-
-## 📝 License
-
-MIT License – see [LICENSE](./LICENSE)
+* [ ] Story/Status system
+* [ ] Media uploads with storage microservice
+* [ ] Notification preferences & batching
+* [ ] Activity logs and admin moderation tools
+* [ ] Full-text post and comment search
 
 ---
 
-## 🙌 Acknowledgements
+## 📁 Project Structure
 
-Inspired by platforms like **Facebook**, **Twitter**, and **Discord** – designed to be modular, scalable, and developer-friendly.
+```bash
+/services
+  ├── auth/
+  ├── users/
+  ├── posts/
+  ├── chat/
+  ├── notifications/
+  └── common/
+/gateway
+  ├── api-gateway/
+/proto
+  └── *.proto
+/docker
+  └── docker-compose.yml
+```
+
+---
+
+## 🤝 Contributing
+
+1. Fork this repo
+2. Create a branch (`git checkout -b feature/my-feature`)
+3. Commit your changes
+4. Push to your branch (`git push origin feature/my-feature`)
+5. Open a Pull Request
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License.
+© 2025 Oluwaseyi Oke

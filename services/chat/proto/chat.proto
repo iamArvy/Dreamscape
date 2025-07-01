@@ -1,0 +1,182 @@
+syntax = "proto3";
+
+package chat;
+
+import "google/protobuf/empty.proto";
+
+
+service ConversationService {
+  rpc Health(google.protobuf.Empty) returns (Status);
+
+  rpc Create(CreateConversationInput) returns (ConversationData);
+  rpc List(UserId) returns (ConversationList);
+  rpc Get(GetConversation) returns (ConversationData);
+  rpc Messages(GetConversation) returns (MessageList);
+}
+
+service MessageService {
+  // rpc Health(google.protobuf.Empty) returns (Status);
+
+  rpc Send(CreateMessageInput) returns (MessageData);
+  rpc Update(UpdateMessageInput) returns (MessageData);
+  rpc Delete(DeleteMessageInput) returns (Status);
+  rpc Reply(UpdateMessageInput) returns (MessageData);
+}
+
+service GroupService {
+  rpc Create(CreateGroupInput) returns (ConversationData);
+  rpc Delete(UserGroupRequest) returns (Status);
+  rpc Update(UpdateGroupInput) returns (Status);
+  rpc MakeOwner(UserGroupParticipantRequest) returns (Status);
+  rpc AddMembers(AddParticipantRequest) returns (Status);
+  rpc GetParticipants(UserGroupRequest) returns (ParticipantList);
+  rpc MakeAdmin(UserGroupParticipantRequest) returns (ParticipantList);
+  rpc RemoveAdmin(UserGroupParticipantRequest) returns (ParticipantList);
+  rpc RemoveMember(UserGroupParticipantRequest) returns (ParticipantList);
+  rpc Leave(UserGroupRequest) returns (ParticipantList);
+}
+
+message MessageInput {
+  string text = 1;
+}
+
+message CreateMessageInput {
+  string user_id = 1;
+  string conversation_id = 2;
+  MessageInput data = 3;
+}
+
+message UpdateMessageInput {
+  string id = 1;
+  string user_id = 2;
+  MessageInput data = 3;
+}
+
+message DeleteMessageInput {
+  string id = 1;
+  string user_id = 2;
+}
+
+
+message CreateConversationInput {
+  string user_id = 1;
+  string recipient_id = 2;
+}
+
+message ConversationData {
+  string id = 1;
+  optional string name = 2;
+  optional bool group = 3;
+  optional string creator_id = 4;
+  string created_at = 5;
+  optional string updated_at = 6;
+}
+
+message ConversationList  {
+  repeated ConversationData conversations = 1;
+}
+
+message GetConversation {
+  string user_id = 1;
+  string id = 2;
+}
+
+message UserId {
+  string user_id = 1;
+}
+
+message MessageData {
+  string conversation_id = 1;
+  string sender_id = 2;
+  optional string reply_id = 3;
+  string text = 4;
+}
+
+message MessageList {
+  repeated MessageData messages = 1;
+}
+
+message Status {
+  bool success = 1;
+}
+
+message UserData {
+  string id = 1;
+  string user_id = 2;
+  string username = 3;
+  optional string avatar = 4;
+  string created_at = 5;
+  string updated_at = 6; 
+}
+
+message ParticipantData {
+  string id = 1;
+  string user_id = 2;
+  bool is_admin = 3;
+  string conversation_id = 4;
+  string created_at = 5;
+  string updated_at = 6; 
+}
+
+message ParticipantList {
+  repeated ParticipantData participants = 1;
+}
+
+message GroupInput {
+  string name = 1;
+}
+
+message CreateGroupInput {
+  string user_id = 1;
+  GroupInput data = 2;
+}
+
+message UpdateGroupInput {
+  string id = 1;
+  string user_id = 2;
+  GroupInput data = 3;
+}
+
+message UserGroupRequest {
+  string id = 1;
+  string user_id = 2;
+}
+
+message UserGroupParticipantRequest {
+  string id = 1;
+  string user_id = 2;
+  string participant_id = 3;
+}
+
+message AddParticipantRequest {
+  string id = 1;
+  string user_id = 2;
+  repeated string users = 3;
+}
+
+// service ChatService {
+//   rpc Health(google.protobuf.Empty) returns (Status);
+
+//   rpc AddUsers() returns ();
+//   rpc getParticipants() returns ();
+//   rpc makeAdmin() returns ();
+//   rpc removeAdmin() returns ();
+//   rpc removeUser() returns ();
+//   rpc leaveGroup() returns ();
+//   // Credential-related
+//   rpc SendMessage(RegisterRequest) returns (AuthResponse);
+//   rpc GetConversations(ChangePasswordRequest) returns (Status);
+//   rpc GetConversation(ChangeEmailRequest) returns (Status);
+//   rpc LeaveConversation() returns ();
+//   rpc requestPasswordResetToken(RequestPasswordResetMessage) returns (Status);
+//   rpc resetPassword(ResetPasswordMessage) returns (Status);
+
+//   // Email verification
+//   rpc RequestEmailVerification(EmailData) returns (Status);
+//   rpc VerifyEmail(TokenRequest) returns (Status);
+
+//   // Login / Token
+//   rpc Login(LoginRequest) returns (AuthResponse);
+//   rpc RefreshToken(TokenRequest) returns (AuthToken);
+//   rpc Logout(TokenRequest) returns (Status);
+// }

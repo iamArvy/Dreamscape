@@ -1,22 +1,14 @@
-import { MongooseModule } from '@nestjs/mongoose';
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { AppGateway } from './app.gateway';
-import { ConversationModule } from './conversation/conversation.module';
-import { ParticipantModule } from './participant/participant.module';
-import { MessageModule } from './message/message.module';
+import { ConversationModule } from './conversation/module';
+import { MessageModule } from './message/module';
+import { ConfigModule } from '@nestjs/config';
+import { GroupModule } from './group/group.module';
 @Module({
   imports: [
-    MongooseModule.forRoot(
-      process.env.DB_URL ||
-        'mongodb://root:example@localhost:27017/auth?authSource=admin',
-    ),
     ConversationModule,
     MessageModule,
-    ParticipantModule,
+    ConfigModule.forRoot({ isGlobal: true }),
+    GroupModule,
   ],
-  controllers: [AppController],
-  providers: [AppService, AppGateway],
 })
 export class AppModule {}
