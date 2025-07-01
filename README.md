@@ -1,4 +1,4 @@
-# 💬 Social Media API
+# 💬 Nexlink
 
 A scalable, modular **Social Media Backend** built with **NestJS**, supporting both **real-time communication** and traditional REST/GraphQL interactions. Built with microservices, gRPC, and WebSockets, it provides real-time chat, friend/follow systems, and a foundation for modern social features.
 
